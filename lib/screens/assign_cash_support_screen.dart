@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'review_submit_screen.dart';
+
 // ─── Colours (spec-exact) ─────────────────────────────────────────────────────
 const Color _kGreen        = Color(0xFF18A369);
 const Color _kGreenDark    = Color(0xFF198246);
@@ -48,14 +50,20 @@ class _AssignCashSupportScreenState extends State<AssignCashSupportScreen> {
       _doubleAmount ? _amountPerFarmer * 2 : _amountPerFarmer;
 
   void _proceed() {
-    debugPrint(
-      '[AssignCash] year=$_year'
-      ' amount=$_amountPerFarmer'
-      ' double=$_doubleAmount'
-      ' effectiveAmount=$_effectiveAmount'
-      ' farmers=${widget.selectedFarmers}',
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ReviewSubmitScreen(
+          groupName: widget.groupName,
+          selectedFarmers: widget.selectedFarmers,
+          totalFarmers: widget.totalFarmers,
+          year: _year,
+          amountPerFarmer: _amountPerFarmer,
+          doubleAmount: _doubleAmount,
+          effectiveAmountPerFarmer: _effectiveAmount,
+        ),
+      ),
     );
-    // TODO: push confirmation screen
   }
 
   @override
