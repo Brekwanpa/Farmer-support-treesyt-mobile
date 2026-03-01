@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'farmer_selection_screen.dart';
+
 // ─── Colours (spec-exact) ─────────────────────────────────────────────────────
 const Color _kGreen       = Color(0xFF18A369);
 const Color _kGreenLight  = Color(0xFFE8F5F1);  // community tag background
@@ -52,20 +54,6 @@ const List<_Group> _kGroups = [
   _Group(name: 'Afari simpa',                type: 'Farmer Group',  status: _Status.pending),
 ];
 
-// Mock farmers shown inside the selection sheet after tapping a group
-const List<String> _kFarmers = [
-  'Kofi Mensah',
-  'Ama Asante',
-  'Kweku Boateng',
-  'Abena Owusu',
-  'Yaw Darko',
-  'Akua Frimpong',
-  'Kwame Acheampong',
-  'Adwoa Boateng',
-  'Kojo Asante',
-  'Efua Mensah',
-];
-
 // ─── Screen ───────────────────────────────────────────────────────────────────
 class RecordSupportScreen extends StatefulWidget {
   const RecordSupportScreen({super.key});
@@ -101,11 +89,11 @@ class _RecordSupportScreenState extends State<RecordSupportScreen> {
       .toList();
 
   void _openGroupFarmers(BuildContext ctx, _Group group) {
-    showModalBottomSheet<void>(
-      context: ctx,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => _FarmerSelectionSheet(groupName: group.name),
+    Navigator.push(
+      ctx,
+      MaterialPageRoute(
+        builder: (_) => FarmerSelectionScreen(groupName: group.name),
+      ),
     );
   }
 
@@ -437,206 +425,6 @@ class _EmptyState extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-// ─── Farmer selection sheet (opens after tapping a group) ─────────────────────
-class _FarmerSelectionSheet extends StatefulWidget {
-  final String groupName;
-
-  const _FarmerSelectionSheet({required this.groupName});
-
-  @override
-  State<_FarmerSelectionSheet> createState() => _FarmerSelectionSheetState();
-}
-
-class _FarmerSelectionSheetState extends State<_FarmerSelectionSheet> {
-  final Set<String> _selected = {};
-
-  void _toggle(String name) => setState(() {
-        _selected.contains(name)
-            ? _selected.remove(name)
-            : _selected.add(name);
-      });
-
-  void _save() {
-    debugPrint(
-      '[FarmerSupport] Save — group: ${widget.groupName}, '
-      'selected: ${_selected.toList()}',
-    );
-    Navigator.pop(context);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
-      child: Container(
-        color: Colors.white,
-        child: DraggableScrollableSheet(
-          initialChildSize: 0.75,
-          minChildSize: 0.5,
-          maxChildSize: 0.95,
-          expand: false,
-          builder: (_, sc) => Column(
-            children: [
-              // Drag pill
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: Container(
-                  width: 72,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: _kDivider,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-              ),
-
-              // Sheet header
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'Select farmers',
-                            style: TextStyle(
-                              fontFamily: 'Inter',
-                              fontWeight: FontWeight.w500,
-                              fontSize: 16,
-                              color: Colors.black,
-                            ),
-                          ),
-                          Text(
-                            widget.groupName,
-                            style: const TextStyle(
-                              fontFamily: 'Inter',
-                              fontWeight: FontWeight.w400,
-                              fontSize: 14,
-                              color: Color(0xFF737373),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (_selected.isNotEmpty)
-                      Text(
-                        '${_selected.length} selected',
-                        style: const TextStyle(
-                          fontFamily: 'Inter',
-                          fontWeight: FontWeight.w400,
-                          fontSize: 14,
-                          color: _kGreen,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-
-              const Divider(height: 1, thickness: 1, color: _kDivider),
-
-              // Farmer rows with checkboxes
-              Expanded(
-                child: ListView.separated(
-                  controller: sc,
-                  padding: EdgeInsets.zero,
-                  itemCount: _kFarmers.length,
-                  separatorBuilder: (_, __) => const Divider(
-                    height: 1,
-                    thickness: 1,
-                    color: _kDivider,
-                  ),
-                  itemBuilder: (_, i) {
-                    final name = _kFarmers[i];
-                    final checked = _selected.contains(name);
-                    return InkWell(
-                      onTap: () => _toggle(name),
-                      child: SizedBox(
-                        height: 56,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  name,
-                                  style: const TextStyle(
-                                    fontFamily: 'Inter',
-                                    fontWeight: FontWeight.w400,
-                                    fontSize: 16,
-                                    color: Colors.black,
-                                  ),
-                                ),
-                              ),
-                              AnimatedContainer(
-                                duration: const Duration(milliseconds: 150),
-                                width: 24,
-                                height: 24,
-                                decoration: BoxDecoration(
-                                  color: checked
-                                      ? _kGreen
-                                      : Colors.transparent,
-                                  border: Border.all(
-                                    color: checked
-                                        ? _kGreen
-                                        : const Color(0xFF737373),
-                                    width: 1.5,
-                                  ),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: checked
-                                    ? const Icon(
-                                        Icons.check,
-                                        color: Colors.white,
-                                        size: 16,
-                                      )
-                                    : null,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
-
-              // Save details button
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                child: SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: ElevatedButton(
-                    onPressed: _save,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _kGreen,
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    child: const Text(
-                      'Save details',
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontWeight: FontWeight.w500,
-                        fontSize: 16,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }
