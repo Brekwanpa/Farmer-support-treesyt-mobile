@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'assign_cash_support_screen.dart';
+
 // ─── Colours (spec-exact) ─────────────────────────────────────────────────────
 const Color _kGreen      = Color(0xFF18A369);
 const Color _kGreenLight = Color(0xFFE8F5F1);
@@ -34,11 +36,10 @@ class _SelectSupportScreenState extends State<SelectSupportScreen> {
       _primarySelected != null || _secondarySelected != null || _agroforestry;
 
   void _proceed() {
-    // TODO: navigate to next step in flow
-    debugPrint('[SelectSupport] Proceeding with:'
-        ' primary=$_primarySelected'
-        ' secondary=$_secondarySelected'
-        ' agroforestry=$_agroforestry');
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const AssignCashSupportScreen()),
+    );
   }
 
   @override
