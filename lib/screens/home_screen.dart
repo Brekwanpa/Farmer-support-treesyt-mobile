@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../app_theme.dart';
+import 'farmer_support_screen.dart';
 import 'forms_screen.dart';
 
 // ─── Spec-exact colour palette ───────────────────────────────────────────────
@@ -59,11 +60,17 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _onModuleTap(_Module module) {
-    if (module.label == 'Forms') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const FormsScreen()),
-      );
+    switch (module.label) {
+      case 'Forms':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const FormsScreen()),
+        );
+      case 'Farmer Support':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const FarmerSupportScreen()),
+        );
     }
   }
 
