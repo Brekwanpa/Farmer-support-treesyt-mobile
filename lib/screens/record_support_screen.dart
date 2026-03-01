@@ -1,17 +1,58 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-// ─── Spec-exact colour palette ───────────────────────────────────────────────
+// ─── Colours (spec-exact) ─────────────────────────────────────────────────────
 const Color _kGreen       = Color(0xFF18A369);
-const Color _kGreenLight  = Color(0xFFE8F5EE);
-const Color _kBgGray      = Color(0xFFFAFAFA);
+const Color _kGreenLight  = Color(0xFFE8F5F1);  // community tag background
 const Color _kDivider     = Color(0xFFE5E5E5);
-const Color _kTextPrimary = Color(0xFF171717);
-const Color _kTextSec     = Color(0xFF737373);
-const Color _kChevron     = Color(0xFF4F5E71);
 const Color _kHomeBar     = Color(0xFF1D1B20);
 
-// ─── Mock farmer list — replace with API lookup in production ─────────────────
+// Status colours
+const Color _kStatusGreen  = Color(0xFF18A369);
+const Color _kStatusOrange = Color(0xFFF59E0B);
+const Color _kStatusRed    = Color(0xFFEF4444);
+const Color _kStatusGray   = Color(0xFF9CA3AF);
+
+// ─── Group status enum ────────────────────────────────────────────────────────
+enum _Status { submitted, pending, incomplete, processed }
+
+extension _StatusX on _Status {
+  Color get color => switch (this) {
+    _Status.submitted  => _kStatusGreen,
+    _Status.pending    => _kStatusOrange,
+    _Status.incomplete => _kStatusRed,
+    _Status.processed  => _kStatusGray,
+  };
+
+  String get label => switch (this) {
+    _Status.submitted  => 'Request submitted',
+    _Status.pending    => 'Tap to record request',
+    _Status.incomplete => 'Tap to complete request',
+    _Status.processed  => 'Processed',
+  };
+}
+
+// ─── Data model ───────────────────────────────────────────────────────────────
+class _Group {
+  final String name;
+  final String type;
+  final _Status status;
+
+  const _Group({required this.name, required this.type, required this.status});
+}
+
+const List<_Group> _kGroups = [
+  _Group(name: 'Northern Star Farmers',      type: 'VSLA Group',    status: _Status.submitted),
+  _Group(name: 'Jirapa Fields Cooperative',  type: 'VSLA Group',    status: _Status.pending),
+  _Group(name: 'Afari simpa',                type: 'Farmer Group',  status: _Status.pending),
+  _Group(name: 'Tumu Prosper Farmers Guild', type: 'Farmer Group',  status: _Status.incomplete),
+  _Group(name: 'Northern Star Farmers',      type: 'VSLA Group',    status: _Status.submitted),
+  _Group(name: 'Unity Fields Network',       type: 'VSLA Group',    status: _Status.processed),
+  _Group(name: 'Tumu Prosper Farmers Guild', type: 'Farmer Group',  status: _Status.incomplete),
+  _Group(name: 'Afari simpa',                type: 'Farmer Group',  status: _Status.pending),
+];
+
+// Mock farmers shown inside the selection sheet after tapping a group
 const List<String> _kFarmers = [
   'Kofi Mensah',
   'Ama Asante',
@@ -25,7 +66,7 @@ const List<String> _kFarmers = [
   'Efua Mensah',
 ];
 
-// ─── Screen 2: Record Support ─────────────────────────────────────────────────
+// ─── Screen ───────────────────────────────────────────────────────────────────
 class RecordSupportScreen extends StatefulWidget {
   const RecordSupportScreen({super.key});
 
@@ -40,9 +81,9 @@ class _RecordSupportScreenState extends State<RecordSupportScreen> {
   @override
   void initState() {
     super.initState();
-    _searchCtrl.addListener(() {
-      setState(() => _query = _searchCtrl.text.trim().toLowerCase());
-    });
+    _searchCtrl.addListener(
+      () => setState(() => _query = _searchCtrl.text.trim().toLowerCase()),
+    );
   }
 
   @override
@@ -51,25 +92,26 @@ class _RecordSupportScreenState extends State<RecordSupportScreen> {
     super.dispose();
   }
 
-  List<String> get _filtered =>
-      _kFarmers.where((f) => f.toLowerCase().contains(_query)).toList();
+  List<_Group> get _filtered => _kGroups
+      .where(
+        (g) =>
+            g.name.toLowerCase().contains(_query) ||
+            g.type.toLowerCase().contains(_query),
+      )
+      .toList();
 
-  // Opens Screen 3 — farmer selection bottom sheet
-  void _openSelectionSheet(BuildContext context) {
+  void _openGroupFarmers(BuildContext ctx, _Group group) {
     showModalBottomSheet<void>(
-      context: context,
+      context: ctx,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (_) => const _FarmerSelectionSheet(),
+      builder: (_) => _FarmerSelectionSheet(groupName: group.name),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final farmers = _filtered;
+    final groups = _filtered;
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
@@ -79,38 +121,69 @@ class _RecordSupportScreenState extends State<RecordSupportScreen> {
       child: Scaffold(
         backgroundColor: _kGreen,
         body: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // §1 — Status bar (0–52 px)
-            const _FakeStatusBar(),
-            // §2 — Top app bar (52–116 px)
-            const _AppBar(title: 'Record support'),
-            // §3 — White content (116 px onwards)
+            // §1 Status bar · 52 px
+            const _StatusBar(),
+
+            // §2 Top app bar · 64 px
+            const _TopAppBar(),
+
+            // §3 White content area
             Expanded(
               child: Container(
                 color: Colors.white,
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Search bar
+                    // ── Non-scrollable header block ─────────────────────────
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                      child: _SearchBar(controller: _searchCtrl),
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // §4 Header text
+                          const Text(
+                            'Select group to record needs',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontWeight: FontWeight.w500,
+                              fontSize: 14,
+                              color: Colors.black,
+                              letterSpacing: 0.1,
+                              height: 20 / 14,
+                            ),
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          // §5 Filters button (left-aligned, inline)
+                          const _FiltersButton(),
+
+                          // §6 Community tag (16 px top + bottom margins)
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 16),
+                            child: _CommunityTag(),
+                          ),
+
+                          // §7 Search bar
+                          _GroupSearchBar(controller: _searchCtrl),
+
+                          const SizedBox(height: 16),
+                        ],
+                      ),
                     ),
-                    const Divider(height: 1, thickness: 1, color: _kDivider),
-                    // Farmer list / empty state
+
+                    // §8 Scrollable farmer groups list
                     Expanded(
-                      child: farmers.isEmpty
+                      child: groups.isEmpty
                           ? const _EmptyState()
-                          : ListView.separated(
+                          : ListView.builder(
                               padding: EdgeInsets.zero,
-                              itemCount: farmers.length,
-                              separatorBuilder: (_, __) => const Divider(
-                                height: 1,
-                                thickness: 1,
-                                color: _kDivider,
-                              ),
-                              itemBuilder: (ctx, i) => _FarmerRow(
-                                name: farmers[i],
-                                onTap: () => _openSelectionSheet(ctx),
+                              itemCount: groups.length,
+                              itemBuilder: (ctx, i) => _GroupRow(
+                                group: groups[i],
+                                onTap: () => _openGroupFarmers(ctx, groups[i]),
                               ),
                             ),
                     ),
@@ -118,7 +191,8 @@ class _RecordSupportScreenState extends State<RecordSupportScreen> {
                 ),
               ),
             ),
-            // §4 — Bottom indicator (28 px)
+
+            // §10 Bottom indicator · 28 px
             const _BottomIndicator(),
           ],
         ),
@@ -127,131 +201,239 @@ class _RecordSupportScreenState extends State<RecordSupportScreen> {
   }
 }
 
-// ─── Search bar ───────────────────────────────────────────────────────────────
-class _SearchBar extends StatelessWidget {
-  final TextEditingController controller;
-  const _SearchBar({required this.controller});
+// ─── §5 Filters button ────────────────────────────────────────────────────────
+class _FiltersButton extends StatelessWidget {
+  const _FiltersButton();
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
-      controller: controller,
-      style: const TextStyle(
-        fontSize: 16,
-        fontFamily: 'Inter',
-        fontWeight: FontWeight.w400,
-        color: _kTextPrimary,
-      ),
-      decoration: InputDecoration(
-        hintText: 'Search farmers…',
-        hintStyle: const TextStyle(
-          fontSize: 16,
-          fontFamily: 'Inter',
-          fontWeight: FontWeight.w400,
-          color: _kTextSec,
-        ),
-        prefixIcon: const Icon(Icons.search, color: _kTextSec, size: 24),
-        filled: true,
-        fillColor: _kBgGray,
-        contentPadding:
-            const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: _kDivider),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: _kDivider),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-          borderSide: const BorderSide(color: _kGreen, width: 1.5),
+    return InkWell(
+      onTap: () {},
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Filter/sliders icon — Icons.tune matches the 3-line-with-dot spec
+            const Icon(Icons.tune, color: _kGreen, size: 20),
+            const SizedBox(width: 8),
+            const Text(
+              'Filters',
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontWeight: FontWeight.w500,
+                fontSize: 14,
+                color: _kGreen,
+                height: 20 / 14,
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-// ─── Farmer row (56 px, spec §3) ──────────────────────────────────────────────
-class _FarmerRow extends StatelessWidget {
-  final String name;
+// ─── §6 Community tag pill ────────────────────────────────────────────────────
+class _CommunityTag extends StatelessWidget {
+  const _CommunityTag();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: _kGreenLight,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: const Text(
+        'Community: Achubunyor',
+        style: TextStyle(
+          fontFamily: 'Inter',
+          fontWeight: FontWeight.w500,
+          fontSize: 14,
+          color: _kGreen,
+          height: 20 / 14,
+        ),
+      ),
+    );
+  }
+}
+
+// ─── §7 Search bar ────────────────────────────────────────────────────────────
+class _GroupSearchBar extends StatelessWidget {
+  final TextEditingController controller;
+
+  const _GroupSearchBar({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 48,
+      child: TextField(
+        controller: controller,
+        style: const TextStyle(
+          fontFamily: 'Inter',
+          fontWeight: FontWeight.w400,
+          fontSize: 14,
+          color: Colors.black,
+          height: 20 / 14,
+        ),
+        decoration: InputDecoration(
+          hintText: 'Search group',
+          hintStyle: const TextStyle(
+            fontFamily: 'Inter',
+            fontWeight: FontWeight.w400,
+            fontSize: 14,
+            color: Color(0xFF888888),
+            height: 20 / 14,
+          ),
+          prefixIcon: const Icon(
+            Icons.search,
+            color: Color(0xFF888888),
+            size: 20,
+          ),
+          prefixIconConstraints: const BoxConstraints(
+            minWidth: 44,
+            minHeight: 48,
+          ),
+          filled: true,
+          fillColor: Colors.white,
+          contentPadding: const EdgeInsets.symmetric(
+            vertical: 12,
+            horizontal: 16,
+          ),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: Color(0xFFCCCCCC)),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: Color(0xFFCCCCCC)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: _kGreen, width: 1.5),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── §8 Farmer group list row ─────────────────────────────────────────────────
+class _GroupRow extends StatelessWidget {
+  final _Group group;
   final VoidCallback onTap;
 
-  const _FarmerRow({required this.name, required this.onTap});
+  const _GroupRow({required this.group, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
       onTap: onTap,
-      child: SizedBox(
-        height: 56,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 18,
-                backgroundColor: _kGreenLight,
-                child: const Icon(Icons.person_outline, color: _kGreen, size: 20),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  name,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontFamily: 'Inter',
-                    fontWeight: FontWeight.w400,
-                    color: _kTextPrimary,
+      child: Container(
+        decoration: const BoxDecoration(
+          border: Border(
+            bottom: BorderSide(color: _kDivider, width: 1),
+          ),
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Left: name + type + status (flex 1)
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Group name — Inter Medium 16 px
+                  Text(
+                    group.name,
+                    style: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontWeight: FontWeight.w500,
+                      fontSize: 16,
+                      color: Colors.black,
+                      letterSpacing: 0.15,
+                      height: 24 / 16,
+                    ),
                   ),
+
+                  // Group type — Inter Regular 14 px #737373
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      group.type,
+                      style: const TextStyle(
+                        fontFamily: 'Inter',
+                        fontWeight: FontWeight.w400,
+                        fontSize: 14,
+                        color: Color(0xFF737373),
+                        letterSpacing: 0.25,
+                        height: 20 / 14,
+                      ),
+                    ),
+                  ),
+
+                  // Status text — Inter Medium 12 px, colour by status
+                  Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      group.status.label,
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontWeight: FontWeight.w500,
+                        fontSize: 12,
+                        color: group.status.color,
+                        letterSpacing: 0.5,
+                        height: 16 / 12,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Right: chevron — 24×24 container, 20 px icon, #D1D5DB
+            const SizedBox(
+              width: 24,
+              height: 24,
+              child: Center(
+                child: Icon(
+                  Icons.chevron_right,
+                  color: Color(0xFFD1D5DB),
+                  size: 20,
                 ),
               ),
-              const Icon(Icons.chevron_right, color: _kChevron, size: 18),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-// ─── Empty state (search returns nothing) ────────────────────────────────────
+// ─── Empty state ──────────────────────────────────────────────────────────────
 class _EmptyState extends StatelessWidget {
   const _EmptyState();
 
   @override
   Widget build(BuildContext context) {
-    return Center(
+    return const Center(
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 88,
-            height: 88,
-            decoration: const BoxDecoration(
-              color: _kGreenLight,
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.search_off, color: _kGreen, size: 40),
-          ),
-          const SizedBox(height: 20),
-          const Text(
-            'No farmers found',
+          Icon(Icons.search_off, color: Color(0xFF9CA3AF), size: 48),
+          SizedBox(height: 16),
+          Text(
+            'No groups found',
             style: TextStyle(
-              fontSize: 16,
               fontFamily: 'Inter',
               fontWeight: FontWeight.w500,
-              color: _kTextSec,
-            ),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Try a different name',
-            style: TextStyle(
-              fontSize: 14,
-              fontFamily: 'Inter',
-              fontWeight: FontWeight.w400,
-              color: _kTextSec,
+              fontSize: 16,
+              color: Color(0xFF737373),
             ),
           ),
         ],
@@ -260,9 +442,11 @@ class _EmptyState extends StatelessWidget {
   }
 }
 
-// ─── Screen 3: Farmer Selection Bottom Sheet ──────────────────────────────────
+// ─── Farmer selection sheet (opens after tapping a group) ─────────────────────
 class _FarmerSelectionSheet extends StatefulWidget {
-  const _FarmerSelectionSheet();
+  final String groupName;
+
+  const _FarmerSelectionSheet({required this.groupName});
 
   @override
   State<_FarmerSelectionSheet> createState() => _FarmerSelectionSheetState();
@@ -277,9 +461,11 @@ class _FarmerSelectionSheetState extends State<_FarmerSelectionSheet> {
             : _selected.add(name);
       });
 
-  void _saveDetails() {
-    // Stub — logs selected farmers and dismisses sheet
-    debugPrint('[FarmerSupport] Save details — selected: ${_selected.toList()}');
+  void _save() {
+    debugPrint(
+      '[FarmerSupport] Save — group: ${widget.groupName}, '
+      'selected: ${_selected.toList()}',
+    );
     Navigator.pop(context);
   }
 
@@ -294,171 +480,159 @@ class _FarmerSelectionSheetState extends State<_FarmerSelectionSheet> {
           minChildSize: 0.5,
           maxChildSize: 0.95,
           expand: false,
-          builder: (ctx, scrollController) {
-            return Column(
-              children: [
-                // ── Drag pill / swipe handle ────────────────────────────────
-                const _DragPill(),
-
-                // ── Sheet header ────────────────────────────────────────────
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-                  child: Row(
-                    children: [
-                      const Expanded(
-                        child: Text(
-                          'Select farmers',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontFamily: 'Inter',
-                            fontWeight: FontWeight.w500,
-                            color: _kTextPrimary,
-                          ),
-                        ),
-                      ),
-                      if (_selected.isNotEmpty)
-                        Text(
-                          '${_selected.length} selected',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontFamily: 'Inter',
-                            fontWeight: FontWeight.w400,
-                            color: _kGreen,
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                const Divider(height: 1, thickness: 1, color: _kDivider),
-
-                // ── Farmer rows with checkboxes ─────────────────────────────
-                Expanded(
-                  child: ListView.separated(
-                    controller: scrollController,
-                    padding: EdgeInsets.zero,
-                    itemCount: _kFarmers.length,
-                    separatorBuilder: (_, __) => const Divider(
-                      height: 1,
-                      thickness: 1,
-                      color: _kDivider,
-                    ),
-                    itemBuilder: (_, i) {
-                      final name = _kFarmers[i];
-                      return _CheckboxFarmerRow(
-                        name: name,
-                        checked: _selected.contains(name),
-                        onTap: () => _toggle(name),
-                      );
-                    },
-                  ),
-                ),
-
-                // ── Save details button ─────────────────────────────────────
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-                  child: SizedBox(
-                    width: double.infinity,
-                    height: 52,
-                    child: ElevatedButton(
-                      onPressed: _saveDetails,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _kGreen,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      child: const Text(
-                        'Save details',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontFamily: 'Inter',
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            );
-          },
-        ),
-      ),
-    );
-  }
-}
-
-// ─── Drag pill / swipe handle (spec: 28 px tall indicator) ───────────────────
-class _DragPill extends StatelessWidget {
-  const _DragPill();
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Container(
-        width: 72,
-        height: 4,
-        decoration: BoxDecoration(
-          color: _kDivider,
-          borderRadius: BorderRadius.circular(4),
-        ),
-      ),
-    );
-  }
-}
-
-// ─── Checkbox farmer row (56 px, spec §3) ────────────────────────────────────
-class _CheckboxFarmerRow extends StatelessWidget {
-  final String name;
-  final bool checked;
-  final VoidCallback onTap;
-
-  const _CheckboxFarmerRow({
-    required this.name,
-    required this.checked,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: SizedBox(
-        height: 56,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          child: Row(
+          builder: (_, sc) => Column(
             children: [
-              // Farmer name — Inter Regular 16px
-              Expanded(
-                child: Text(
-                  name,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontFamily: 'Inter',
-                    fontWeight: FontWeight.w400,
-                    color: _kTextPrimary,
+              // Drag pill
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Container(
+                  width: 72,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: _kDivider,
+                    borderRadius: BorderRadius.circular(4),
                   ),
                 ),
               ),
-              // Animated checkbox
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 150),
-                width: 24,
-                height: 24,
-                decoration: BoxDecoration(
-                  color: checked ? _kGreen : Colors.transparent,
-                  border: Border.all(
-                    color: checked ? _kGreen : _kTextSec,
-                    width: 1.5,
-                  ),
-                  borderRadius: BorderRadius.circular(4),
+
+              // Sheet header
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Select farmers',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontWeight: FontWeight.w500,
+                              fontSize: 16,
+                              color: Colors.black,
+                            ),
+                          ),
+                          Text(
+                            widget.groupName,
+                            style: const TextStyle(
+                              fontFamily: 'Inter',
+                              fontWeight: FontWeight.w400,
+                              fontSize: 14,
+                              color: Color(0xFF737373),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (_selected.isNotEmpty)
+                      Text(
+                        '${_selected.length} selected',
+                        style: const TextStyle(
+                          fontFamily: 'Inter',
+                          fontWeight: FontWeight.w400,
+                          fontSize: 14,
+                          color: _kGreen,
+                        ),
+                      ),
+                  ],
                 ),
-                child: checked
-                    ? const Icon(Icons.check, color: Colors.white, size: 16)
-                    : null,
+              ),
+
+              const Divider(height: 1, thickness: 1, color: _kDivider),
+
+              // Farmer rows with checkboxes
+              Expanded(
+                child: ListView.separated(
+                  controller: sc,
+                  padding: EdgeInsets.zero,
+                  itemCount: _kFarmers.length,
+                  separatorBuilder: (_, __) => const Divider(
+                    height: 1,
+                    thickness: 1,
+                    color: _kDivider,
+                  ),
+                  itemBuilder: (_, i) {
+                    final name = _kFarmers[i];
+                    final checked = _selected.contains(name);
+                    return InkWell(
+                      onTap: () => _toggle(name),
+                      child: SizedBox(
+                        height: 56,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  name,
+                                  style: const TextStyle(
+                                    fontFamily: 'Inter',
+                                    fontWeight: FontWeight.w400,
+                                    fontSize: 16,
+                                    color: Colors.black,
+                                  ),
+                                ),
+                              ),
+                              AnimatedContainer(
+                                duration: const Duration(milliseconds: 150),
+                                width: 24,
+                                height: 24,
+                                decoration: BoxDecoration(
+                                  color: checked
+                                      ? _kGreen
+                                      : Colors.transparent,
+                                  border: Border.all(
+                                    color: checked
+                                        ? _kGreen
+                                        : const Color(0xFF737373),
+                                    width: 1.5,
+                                  ),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: checked
+                                    ? const Icon(
+                                        Icons.check,
+                                        color: Colors.white,
+                                        size: 16,
+                                      )
+                                    : null,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+
+              // Save details button
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: _save,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _kGreen,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: const Text(
+                      'Save details',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontWeight: FontWeight.w500,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ],
           ),
@@ -468,29 +642,32 @@ class _CheckboxFarmerRow extends StatelessWidget {
   }
 }
 
-// ─── Fake status bar (52 px) ──────────────────────────────────────────────────
-class _FakeStatusBar extends StatelessWidget {
-  const _FakeStatusBar();
+// ─── Status bar — 52 px (spec §1) ────────────────────────────────────────────
+class _StatusBar extends StatelessWidget {
+  const _StatusBar();
 
   @override
   Widget build(BuildContext context) {
     return Container(
       height: 52,
       color: _kGreen,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
       child: Row(
         children: [
+          // Time
           const Text(
             '9:30',
             style: TextStyle(
               color: Colors.white,
-              fontSize: 14,
               fontFamily: 'Roboto',
               fontWeight: FontWeight.w500,
+              fontSize: 14,
               letterSpacing: 0.14,
+              height: 20 / 14,
             ),
           ),
           const Spacer(),
+          // Camera cutout
           Container(
             width: 24,
             height: 24,
@@ -500,21 +677,25 @@ class _FakeStatusBar extends StatelessWidget {
             ),
           ),
           const Spacer(),
-          const Icon(Icons.wifi, color: Colors.white, size: 16),
+          // Status icons
+          const Icon(Icons.wifi, color: Colors.white, size: 17),
           const SizedBox(width: 4),
-          const Icon(Icons.signal_cellular_4_bar, color: Colors.white, size: 16),
+          const Icon(
+            Icons.signal_cellular_4_bar,
+            color: Colors.white,
+            size: 17,
+          ),
           const SizedBox(width: 4),
-          const Icon(Icons.battery_full, color: Colors.white, size: 16),
+          const Icon(Icons.battery_full, color: Colors.white, size: 17),
         ],
       ),
     );
   }
 }
 
-// ─── Top app bar (64 px) ─────────────────────────────────────────────────────
-class _AppBar extends StatelessWidget {
-  final String title;
-  const _AppBar({required this.title});
+// ─── Top app bar — 64 px (spec §2) ───────────────────────────────────────────
+class _TopAppBar extends StatelessWidget {
+  const _TopAppBar();
 
   @override
   Widget build(BuildContext context) {
@@ -524,36 +705,41 @@ class _AppBar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
+          // Back button — 48×48
           SizedBox(
             width: 48,
             height: 48,
             child: IconButton(
-              padding: const EdgeInsets.all(8),
+              padding: EdgeInsets.zero,
               icon: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
               onPressed: () => Navigator.maybePop(context),
             ),
           ),
           const SizedBox(width: 4),
-          Expanded(
+          // Title
+          const Expanded(
             child: Text(
-              title,
-              style: const TextStyle(
+              'Farmer support',
+              style: TextStyle(
                 color: Colors.white,
-                fontSize: 16,
                 fontFamily: 'Inter',
                 fontWeight: FontWeight.w500,
+                fontSize: 16,
                 letterSpacing: 0.15,
+                height: 24 / 16,
               ),
             ),
           ),
-          const SizedBox(width: 48),
+          // Trailing placeholder
+          const SizedBox(width: 48, height: 48),
         ],
       ),
     );
   }
 }
 
-// ─── Bottom indicator (28 px) ─────────────────────────────────────────────────
+// ─── Bottom indicator — 28 px (spec §10) ─────────────────────────────────────
+// Home bar: 134×5 px, #1D1B20, border-radius 100, 8 px from bottom
 class _BottomIndicator extends StatelessWidget {
   const _BottomIndicator();
 
@@ -561,14 +747,15 @@ class _BottomIndicator extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: 28,
-      color: _kBgGray,
-      alignment: Alignment.center,
+      color: Colors.white,
+      alignment: Alignment.bottomCenter,
+      padding: const EdgeInsets.only(bottom: 8),
       child: Container(
-        width: 72,
-        height: 10,
+        width: 134,
+        height: 5,
         decoration: BoxDecoration(
           color: _kHomeBar,
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(100),
         ),
       ),
     );

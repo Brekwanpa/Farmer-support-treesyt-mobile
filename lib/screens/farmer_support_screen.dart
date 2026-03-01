@@ -7,62 +7,69 @@ import 'record_support_screen.dart';
 import 'recoveries_screen.dart';
 import 'support_progress_screen.dart';
 
-// ─── Spec-exact colour palette ───────────────────────────────────────────────
+// ─── Spec-exact colour palette ────────────────────────────────────────────────
 const Color _kGreen       = Color(0xFF18A369);
 const Color _kBgGray      = Color(0xFFFAFAFA);
 const Color _kDivider     = Color(0xFFE5E5E5);
-const Color _kTextPrimary = Color(0xFF171717);
-const Color _kTextSec     = Color(0xFF737373);
-const Color _kChevron     = Color(0xFF4F5E71);
-const Color _kHomeBar     = Color(0xFF1D1B20);
+const Color _kTextPrimary = Color(0xFF252A31);   // spec: Text Primary
+const Color _kIconGray    = Color(0xFF737373);   // spec: Icon Gray
+const Color _kChevron     = Color(0xFF4F5E71);   // spec: Chevron Gray
+const Color _kHomeBar     = Color(0xFF1D1B20);   // spec: Bottom Indicator
 
-// ─── Menu item data ───────────────────────────────────────────────────────────
-class _MenuEntry {
+// ─── Menu entry descriptor ────────────────────────────────────────────────────
+class _Entry {
   final Widget icon;
+  final bool hasCircle;   // true → 40×40 white circle container
   final String label;
-  const _MenuEntry({required this.icon, required this.label});
+  final WidgetBuilder destination;
+
+  const _Entry({
+    required this.icon,
+    required this.hasCircle,
+    required this.label,
+    required this.destination,
+  });
 }
 
-// ─── Screen 1 ────────────────────────────────────────────────────────────────
+// ─── Screen ───────────────────────────────────────────────────────────────────
 class FarmerSupportScreen extends StatelessWidget {
   const FarmerSupportScreen({super.key});
 
-  List<_MenuEntry> _buildMenu() => [
-    // Record support — custom outline, 18×18 px, #737373
-    _MenuEntry(
-      icon: const Icon(Icons.mic_none, color: _kTextSec, size: 18),
+  List<_Entry> _entries() => [
+    // Item 1 — Record Support
+    // Custom outline icon, 18×18 px, white 40×40 circle container
+    _Entry(
+      icon: const Icon(Icons.assignment_outlined, color: _kIconGray, size: 18),
+      hasCircle: true,
       label: 'Record support',
+      destination: (_) => const RecordSupportScreen(),
     ),
-    // Support Progress — safety-divider analogue, 24×24 px, #737373
-    _MenuEntry(
-      icon: const Icon(Icons.bar_chart_outlined, color: _kTextSec, size: 24),
-      label: 'Support Progress',
+
+    // Item 2 — Support Progress
+    // safety_divider icon, 24×24 px, transparent 40×40 container
+    _Entry(
+      icon: const Icon(Icons.safety_divider, color: _kIconGray, size: 24),
+      hasCircle: false,
+      label: 'Support progress',
+      destination: (_) => const SupportProgressScreen(),
     ),
-    // Recoveries — arrow rotated 180°, 16×16 px, #737373
-    _MenuEntry(
+
+    // Item 3 — Recoveries
+    // Arrow rotated 180°, 16×16 px, white 40×40 circle container
+    _Entry(
       icon: Transform.rotate(
         angle: math.pi,
-        child: const Icon(Icons.arrow_forward, color: _kTextSec, size: 16),
+        child: const Icon(Icons.arrow_forward, color: _kIconGray, size: 16),
       ),
+      hasCircle: true,
       label: 'Recoveries',
+      destination: (_) => const RecoveriesScreen(),
     ),
   ];
 
-  void _onTap(BuildContext context, int index) {
-    final destinations = <Widget>[
-      const RecordSupportScreen(),
-      const SupportProgressScreen(),
-      const RecoveriesScreen(),
-    ];
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => destinations[index]),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final menu = _buildMenu();
+    final entries = _entries();
 
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
@@ -72,32 +79,67 @@ class FarmerSupportScreen extends StatelessWidget {
       child: Scaffold(
         backgroundColor: _kGreen,
         body: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // §1 — Status bar (0–52 px)
-            const _FakeStatusBar(),
-            // §2 — Top app bar (52–116 px)
-            const _AppBar(title: 'Farmer support'),
-            // §3 — White content (116 px onwards)
+            // §1 Status bar  ·  52 px
+            const _StatusBar(),
+
+            // §2 Top app bar  ·  64 px
+            const _TopAppBar(),
+
+            // §3 Bottom sheet (white)  ·  fills remaining space
             Expanded(
               child: Container(
                 color: Colors.white,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    for (int i = 0; i < menu.length; i++) ...[
+                    // Section header — 12 px from sheet top, 16 px side padding
+                    const Padding(
+                      padding: EdgeInsets.only(top: 12, left: 16, right: 16),
+                      child: Text(
+                        'What do you want to do?',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontWeight: FontWeight.w500,
+                          fontSize: 16,
+                          color: Colors.black,
+                          letterSpacing: 0.15,
+                          height: 24 / 16,
+                        ),
+                      ),
+                    ),
+
+                    // 24 px gap between header and item list
+                    const SizedBox(height: 24),
+
+                    // Menu items with 1 px dividers (8 px total gap)
+                    for (int i = 0; i < entries.length; i++) ...[
                       if (i > 0)
-                        const Divider(height: 1, thickness: 1, color: _kDivider),
-                      _MenuItemRow(
-                        entry: menu[i],
-                        onTap: () => _onTap(context, i),
+                        const Divider(
+                          height: 8,
+                          thickness: 1,
+                          color: _kDivider,
+                          indent: 0,
+                          endIndent: 0,
+                        ),
+                      _MenuItem(
+                        entry: entries[i],
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: entries[i].destination),
+                        ),
                       ),
                     ],
+
                     const Spacer(),
                   ],
                 ),
               ),
             ),
-            // §4 — Bottom indicator (28 px)
+
+            // §6 Bottom indicator  ·  28 px
             const _BottomIndicator(),
           ],
         ),
@@ -106,12 +148,12 @@ class FarmerSupportScreen extends StatelessWidget {
   }
 }
 
-// ─── Menu item row (56 px, spec §3) ──────────────────────────────────────────
-class _MenuItemRow extends StatelessWidget {
-  final _MenuEntry entry;
+// ─── Menu item row — 56 px tall (spec §5) ─────────────────────────────────────
+class _MenuItem extends StatelessWidget {
+  final _Entry entry;
   final VoidCallback onTap;
 
-  const _MenuItemRow({required this.entry, required this.onTap});
+  const _MenuItem({required this.entry, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -123,26 +165,28 @@ class _MenuItemRow extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
             children: [
-              // Icon container — 40×40 px (spec)
-              SizedBox(
-                width: 40,
-                height: 40,
-                child: Center(child: entry.icon),
-              ),
-              const SizedBox(width: 12),
-              // Label — Inter Regular 16px #171717
+              // Left: icon container 40×40 px
+              _IconBox(hasCircle: entry.hasCircle, child: entry.icon),
+
+              // Gap: 16 px between icon and text
+              const SizedBox(width: 16),
+
+              // Label — Inter Regular 16 px #252A31
               Expanded(
                 child: Text(
                   entry.label,
                   style: const TextStyle(
-                    fontSize: 16,
                     fontFamily: 'Inter',
                     fontWeight: FontWeight.w400,
+                    fontSize: 16,
                     color: _kTextPrimary,
+                    letterSpacing: 0.5,
+                    height: 1.5,
                   ),
                 ),
               ),
-              // Chevron — 24×24 container, glyph #4F5E71
+
+              // Right: chevron in 24×24 container, glyph #4F5E71
               const SizedBox(
                 width: 24,
                 height: 24,
@@ -158,53 +202,97 @@ class _MenuItemRow extends StatelessWidget {
   }
 }
 
-// ─── Fake status bar (52 px) ──────────────────────────────────────────────────
-class _FakeStatusBar extends StatelessWidget {
-  const _FakeStatusBar();
+// ─── Icon container (40×40) ───────────────────────────────────────────────────
+// hasCircle=true  → white filled circle, 8 px inner padding (spec items 1 & 3)
+// hasCircle=false → transparent box, icon centred (spec item 2)
+class _IconBox extends StatelessWidget {
+  final bool hasCircle;
+  final Widget child;
+
+  const _IconBox({required this.hasCircle, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    if (hasCircle) {
+      return Container(
+        width: 40,
+        height: 40,
+        padding: const EdgeInsets.all(8),
+        alignment: Alignment.center,
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          shape: BoxShape.circle,
+        ),
+        child: child,
+      );
+    }
+    return SizedBox(
+      width: 40,
+      height: 40,
+      child: Center(child: child),
+    );
+  }
+}
+
+// ─── Status bar — 52 px (spec §1) ────────────────────────────────────────────
+class _StatusBar extends StatelessWidget {
+  const _StatusBar();
 
   @override
   Widget build(BuildContext context) {
     return Container(
       height: 52,
       color: _kGreen,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      // 10 px vertical, 24 px horizontal padding (spec)
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
       child: Row(
         children: [
+          // Left — time "9:30"
           const Text(
             '9:30',
             style: TextStyle(
               color: Colors.white,
-              fontSize: 14,
               fontFamily: 'Roboto',
               fontWeight: FontWeight.w500,
+              fontSize: 14,
               letterSpacing: 0.14,
+              height: 20 / 14,
             ),
           ),
+
           const Spacer(),
+
+          // Centre — camera cutout 24×24 circle (#1D1B20)
           Container(
             width: 24,
             height: 24,
             decoration: const BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.black,
+              color: _kHomeBar,
             ),
           ),
+
           const Spacer(),
-          const Icon(Icons.wifi, color: Colors.white, size: 16),
+
+          // Right — WiFi 17×17, Signal 17×17, Battery 17 px
+          const Icon(Icons.wifi, color: Colors.white, size: 17),
           const SizedBox(width: 4),
-          const Icon(Icons.signal_cellular_4_bar, color: Colors.white, size: 16),
+          const Icon(
+            Icons.signal_cellular_4_bar,
+            color: Colors.white,
+            size: 17,
+          ),
           const SizedBox(width: 4),
-          const Icon(Icons.battery_full, color: Colors.white, size: 16),
+          const Icon(Icons.battery_full, color: Colors.white, size: 17),
         ],
       ),
     );
   }
 }
 
-// ─── Top app bar (64 px) ─────────────────────────────────────────────────────
-class _AppBar extends StatelessWidget {
-  final String title;
-  const _AppBar({required this.title});
+// ─── Top app bar — 64 px (spec §2) ───────────────────────────────────────────
+class _TopAppBar extends StatelessWidget {
+  const _TopAppBar();
 
   @override
   Widget build(BuildContext context) {
@@ -214,36 +302,45 @@ class _AppBar extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
+          // Leading: back button, 48×48 rounded container
           SizedBox(
             width: 48,
             height: 48,
             child: IconButton(
-              padding: const EdgeInsets.all(8),
+              padding: EdgeInsets.zero,
               icon: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
               onPressed: () => Navigator.maybePop(context),
             ),
           ),
+
+          // 4 px gap
           const SizedBox(width: 4),
-          Expanded(
+
+          // Title — Inter Medium 16 px, white, flex: 1
+          const Expanded(
             child: Text(
-              title,
-              style: const TextStyle(
+              'Farmer support',
+              style: TextStyle(
                 color: Colors.white,
-                fontSize: 16,
                 fontFamily: 'Inter',
                 fontWeight: FontWeight.w500,
+                fontSize: 16,
                 letterSpacing: 0.15,
+                height: 24 / 16,
               ),
             ),
           ),
-          const SizedBox(width: 48),
+
+          // Trailing: empty 48×48 placeholder
+          const SizedBox(width: 48, height: 48),
         ],
       ),
     );
   }
 }
 
-// ─── Bottom indicator (28 px) ─────────────────────────────────────────────────
+// ─── Bottom indicator — 28 px (spec §6) ──────────────────────────────────────
+// Home bar: 72×10 px, #1D1B20, border-radius 8 px, 8 px from bottom
 class _BottomIndicator extends StatelessWidget {
   const _BottomIndicator();
 
@@ -252,7 +349,8 @@ class _BottomIndicator extends StatelessWidget {
     return Container(
       height: 28,
       color: _kBgGray,
-      alignment: Alignment.center,
+      alignment: Alignment.bottomCenter,
+      padding: const EdgeInsets.only(bottom: 8),
       child: Container(
         width: 72,
         height: 10,
