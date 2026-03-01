@@ -30,7 +30,7 @@ if [ ! -d "$FLUTTER_DIR/.git" ]; then
           echo "▶ Fetching dependencies..."
           flutter pub get
 
-          echo "▶ Building web (release, CanvasKit renderer)..."
-          flutter build web --release --renderer canvaskit
+          echo "▶ Building web (release)..."
+          flutter build web --release
 
           echo "✓ Build complete — output in build/web"
