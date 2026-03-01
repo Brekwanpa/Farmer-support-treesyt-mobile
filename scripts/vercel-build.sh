@@ -31,6 +31,6 @@ echo "▶  Fetching dependencies..."
 flutter pub get
 
 echo "▶  Building web (release, CanvasKit renderer)..."
-flutter build web --release --web-renderer canvaskit
+flutter build web --release
 
 echo "✓  Build complete — output in build/web"
