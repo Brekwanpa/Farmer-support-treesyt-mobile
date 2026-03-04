@@ -48,7 +48,7 @@ class _VoiceNoteRecorderState extends State<VoiceNoteRecorder>
     with TickerProviderStateMixin {
   // ── Recording state ─────────────────────────────────────────────────────────
   _RecState _state = _RecState.ready;
-  bool _scriptExpanded = false;
+  bool _scriptExpanded = true;
 
   // ── Timer ───────────────────────────────────────────────────────────────────
   int _elapsed = 0;
@@ -392,7 +392,7 @@ class _VoiceNoteRecorderState extends State<VoiceNoteRecorder>
                       ),
                     ),
 
-                    // ── Bottom buttons ────────────────────────────────────
+                    // ── Bottom buttons ────────────────���───────────────────
                     const Divider(height: 1, thickness: 1, color: _kDivider),
                     Container(
                       color: Colors.white,
