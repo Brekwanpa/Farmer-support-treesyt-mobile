@@ -16,7 +16,7 @@ const Color _kTextGray     = Color(0xFF696969);
 const Color _kTextLtGray   = Color(0xFFA3A3A3);
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
-const List<int> _kAmounts = [50, 100, 150, 200, 250, 300, 400, 500];
+const List<int> _kAmounts = [350, 400, 450, 500, 550, 600, 650, 700, 750, 800];
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 class AssignCashSupportScreen extends StatefulWidget {
@@ -39,7 +39,7 @@ class AssignCashSupportScreen extends StatefulWidget {
 }
 
 class _AssignCashSupportScreenState extends State<AssignCashSupportScreen> {
-  int  _amountPerFarmer = 100;
+  int  _amountPerFarmer = 350;
   bool _doubleAmount    = false;
 
   int get _effectiveAmount =>
@@ -366,7 +366,7 @@ class _AmountField extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.only(left: 0),
                     child: Text(
-                      '$amt',
+                      'GHS $amt',
                       style: const TextStyle(
                         fontFamily: 'Inter',
                         fontWeight: FontWeight.w400,
@@ -379,6 +379,22 @@ class _AmountField extends StatelessWidget {
                 ),
               )
               .toList(),
+          selectedItemBuilder: (BuildContext context) {
+            return _kAmounts
+                .map(
+                  (amt) => Text(
+                    'GHS $amt',
+                    style: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontWeight: FontWeight.w400,
+                      fontSize: 14,
+                      color: _kTextDark,
+                      letterSpacing: 0.25,
+                    ),
+                  ),
+                )
+                .toList();
+          },
           onChanged: (v) {
             if (v != null) onChanged(v);
           },
