@@ -517,6 +517,70 @@ class _ExpectedBagsField extends StatelessWidget {
             letterSpacing: 0.25,
           ),
         ),
+
+        // Alert banner — shown when bags value is entered
+        if (value.isNotEmpty && value != '0') ...[
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFFF8E1),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: const Color(0xFFFFE0B2), width: 1),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFF9800),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Center(
+                    child: Icon(
+                      Icons.info,
+                      color: Colors.white,
+                      size: 14,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Number of bags expected during recoveries',
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                          color: Color(0xFFFF9800),
+                          letterSpacing: 0.25,
+                          height: 1.4,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Each farmer will submit $value ${value == '1' ? 'bag' : 'bags'} when it is time for recovery',
+                        style: const TextStyle(
+                          fontFamily: 'Inter',
+                          fontWeight: FontWeight.w400,
+                          fontSize: 14,
+                          color: Color(0xFFFF9800),
+                          letterSpacing: 0.25,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ],
     );
   }
