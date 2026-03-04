@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import '../app_theme.dart';
 import 'farmer_support_screen.dart';
 import 'forms_screen.dart';
+import 'profiling_screen.dart';
 
 // ─── Spec-exact colour palette ───────────────────────────────────────────────
 const Color _kGreen       = Color(0xFF18A369);
@@ -61,6 +62,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   void _onModuleTap(_Module module) {
     switch (module.label) {
+      case 'Profiling':
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ProfilingScreen()),
+        );
       case 'Forms':
         Navigator.push(
           context,
