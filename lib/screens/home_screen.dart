@@ -223,7 +223,7 @@ class _WelcomeCard extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Text(
-            'Hello Joseph',
+            'Hello Abdul Aziz',
             style: TextStyle(
               color: Colors.white,
               fontSize: 22,
