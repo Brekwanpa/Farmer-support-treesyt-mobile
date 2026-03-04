@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'farmer_selection_screen.dart';
+import 'saved_group_details_screen.dart';
 
 // ─── Colours (spec-exact) ─────────────────────────────────────────────────────
 const Color _kGreen       = Color(0xFF18A369);
@@ -40,18 +41,20 @@ class _Group {
   final String type;
   final _Status status;
   final String community;
+  final bool hasAlert;
 
   const _Group({
     required this.name,
     required this.type,
     required this.status,
     required this.community,
+    this.hasAlert = false,
   });
 }
 
 const List<_Group> _kGroups = [
-  _Group(name: 'Northern Star Farmers',      type: 'VSLA Group',    status: _Status.submitted, community: 'Achubunyou'),
-  _Group(name: 'Jirapa Fields Cooperative',  type: 'VSLA Group',    status: _Status.pending, community: 'Baali'),
+  _Group(name: 'Northern Star Farmers',      type: 'VSLA Group',    status: _Status.submitted, community: 'Achubunyou', hasAlert: true),
+  _Group(name: 'Jirapa Fields Cooperative',  type: 'VSLA Group',    status: _Status.pending, community: 'Baali', hasAlert: true),
   _Group(name: 'Afari simpa',                type: 'Farmer Group',  status: _Status.pending, community: 'Baali Kene'),
   _Group(name: 'Tumu Prosper Farmers Guild', type: 'Farmer Group',  status: _Status.incomplete, community: 'Bakayiri'),
   _Group(name: 'Northern Star Farmers',      type: 'VSLA Group',    status: _Status.submitted, community: 'Blema'),
@@ -117,10 +120,131 @@ class _RecordSupportScreenState extends State<RecordSupportScreen> {
   }
 
   void _openGroupFarmers(BuildContext ctx, _Group group) {
-    Navigator.push(
-      ctx,
-      MaterialPageRoute(
-        builder: (_) => FarmerSelectionScreen(groupName: group.name, year: widget.year),
+    if (group.hasAlert) {
+      _showUpdateDetailsModal(ctx, group);
+    } else {
+      Navigator.push(
+        ctx,
+        MaterialPageRoute(
+          builder: (_) => FarmerSelectionScreen(groupName: group.name, year: widget.year),
+        ),
+      );
+    }
+  }
+
+  void _showUpdateDetailsModal(BuildContext ctx, _Group group) {
+    showDialog(
+      context: ctx,
+      builder: (context) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Alert icon
+              Container(
+                padding: const EdgeInsets.symmetric(vertical: 24),
+                child: Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFEBEE),
+                    borderRadius: BorderRadius.circular(28),
+                  ),
+                  child: const Center(
+                    child: Icon(
+                      Icons.info,
+                      color: Color(0xFFC62828),
+                      size: 32,
+                    ),
+                  ),
+                ),
+              ),
+              
+              // Title
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Text(
+                  'Update group details',
+                  style: const TextStyle(
+                    fontFamily: 'Inter',
+                    fontWeight: FontWeight.w600,
+                    fontSize: 20,
+                    color: Colors.black,
+                    letterSpacing: 0.15,
+                    height: 28 / 20,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              
+              const SizedBox(height: 12),
+              
+              // Description
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Text(
+                  'This group has been flagged due to incomplete or incorrect data.\nKindly update group data to continue',
+                  style: const TextStyle(
+                    fontFamily: 'Inter',
+                    fontWeight: FontWeight.w400,
+                    fontSize: 14,
+                    color: Color(0xFF666666),
+                    letterSpacing: 0.25,
+                    height: 20 / 14,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              
+              const SizedBox(height: 32),
+              
+              // Update details button
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: _kGreen,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    onPressed: () {
+                      Navigator.pop(context);
+                      Navigator.push(
+                        ctx,
+                        MaterialPageRoute(
+                          builder: (_) => SavedGroupDetailsScreen(
+                            groupName: group.name,
+                            selectedFarmers: [],
+                            totalFarmers: 0,
+                            year: widget.year,
+                          ),
+                        ),
+                      );
+                    },
+                    child: const Text(
+                      'Update details',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontWeight: FontWeight.w600,
+                        fontSize: 16,
+                        color: Colors.white,
+                        letterSpacing: 0.5,
+                        height: 24 / 16,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              
+              const SizedBox(height: 24),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -412,19 +536,47 @@ class _GroupRow extends StatelessWidget {
                     ),
                   ),
 
-                  // Status text — Inter Medium 14 px, colour by status
+                  // Status text with alert indicator (if applicable)
                   Padding(
                     padding: const EdgeInsets.only(top: 4),
-                    child: Text(
-                      group.status.label,
-                      style: TextStyle(
-                        fontFamily: 'Inter',
-                        fontWeight: FontWeight.w500,
-                        fontSize: 14,
-                        color: group.status.color,
-                        letterSpacing: 0.25,
-                        height: 20 / 14,
-                      ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (group.hasAlert)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 6),
+                            child: Container(
+                              width: 16,
+                              height: 16,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFF9800),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Center(
+                                child: Icon(
+                                  Icons.info_outline,
+                                  color: Colors.white,
+                                  size: 10,
+                                ),
+                              ),
+                            ),
+                          ),
+                        Text(
+                          group.hasAlert
+                              ? 'Tap to update group details'
+                              : group.status.label,
+                          style: TextStyle(
+                            fontFamily: 'Inter',
+                            fontWeight: FontWeight.w500,
+                            fontSize: 14,
+                            color: group.hasAlert
+                                ? const Color(0xFFFF9800)
+                                : group.status.color,
+                            letterSpacing: 0.25,
+                            height: 20 / 14,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
