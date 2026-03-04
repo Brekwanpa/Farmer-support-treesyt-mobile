@@ -18,9 +18,8 @@ class ReviewSubmitScreen extends StatelessWidget {
   final int selectedFarmers;
   final int totalFarmers;
   final int year;
-  final int amountPerFarmer;          // base amount chosen
-  final bool doubleAmount;            // farmer returns 2 bags at recovery
-  final int effectiveAmountPerFarmer; // actual disbursement (2× if double)
+  final int amountPerFarmer;
+  final String expectedBags;
 
   const ReviewSubmitScreen({
     super.key,
@@ -28,12 +27,11 @@ class ReviewSubmitScreen extends StatelessWidget {
     this.selectedFarmers = 8,
     this.totalFarmers = 11,
     this.year = 2026,
-    this.amountPerFarmer = 700,
-    this.doubleAmount = false,
-    this.effectiveAmountPerFarmer = 700,
+    this.amountPerFarmer = 350,
+    this.expectedBags = '',
   });
 
-  int get _total => effectiveAmountPerFarmer * selectedFarmers;
+  int get _total => amountPerFarmer * selectedFarmers;
 
   void _submit(BuildContext context) {
     Navigator.push(
@@ -467,7 +465,7 @@ class _BottomButton extends StatelessWidget {
   }
 }
 
-// ─── Status bar — 52 px ───────────────────────────────────────────────────────
+// ─── Status bar — 52 px ────────────────────────────────���──────────────────────
 class _StatusBar extends StatelessWidget {
   const _StatusBar();
 
