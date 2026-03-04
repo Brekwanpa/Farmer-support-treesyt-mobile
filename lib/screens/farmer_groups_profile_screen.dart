@@ -98,6 +98,18 @@ class FarmerGroupsProfileScreen extends StatefulWidget {
 class _FarmerGroupsProfileScreenState extends State<FarmerGroupsProfileScreen> {
   late TextEditingController _searchController;
   List<_FarmerGroup> _filteredGroups = _kFarmerGroups;
+  String _selectedCommunity = 'All communities';
+
+  // Get unique communities from groups
+  static const List<String> _kCommunities = [
+    'Kalba',
+    'Gbaaliyiri',
+    'Nahari',
+    'Kolbayiri',
+    'Uro Sarkoromaa',
+    'Kunfusi',
+    'Uro',
+  ];
 
   @override
   void initState() {
@@ -117,15 +129,43 @@ class _FarmerGroupsProfileScreenState extends State<FarmerGroupsProfileScreen> {
 
   void _filterGroups(String query) {
     setState(() {
-      if (query.isEmpty) {
-        _filteredGroups = _kFarmerGroups;
-      } else {
-        _filteredGroups = _kFarmerGroups
+      List<_FarmerGroup> filtered = _kFarmerGroups;
+
+      // Filter by community
+      if (_selectedCommunity != 'All communities') {
+        filtered = filtered
+            .where((group) => group.community == _selectedCommunity)
+            .toList();
+      }
+
+      // Filter by search query
+      if (query.isNotEmpty) {
+        filtered = filtered
             .where((group) =>
                 group.name.toLowerCase().contains(query.toLowerCase()))
             .toList();
       }
+
+      _filteredGroups = filtered;
     });
+  }
+
+  void _openFilterModal() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (_) => _FilterModal(
+        selectedCommunity: _selectedCommunity,
+        onCommunitySelected: (community) {
+          setState(() => _selectedCommunity = community);
+          _filterGroups(_searchController.text);
+          Navigator.pop(context);
+        },
+      ),
+    );
   }
 
   @override
@@ -207,23 +247,26 @@ class _FarmerGroupsProfileScreenState extends State<FarmerGroupsProfileScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Filters section
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.tune, color: _kGreen, size: 20),
-                        const SizedBox(width: 8),
-                        const Text(
-                          'Filters',
-                          style: TextStyle(
-                            fontFamily: 'Inter',
-                            fontWeight: FontWeight.w500,
-                            fontSize: 14,
-                            color: _kGreen,
-                            letterSpacing: 0.25,
+                  GestureDetector(
+                    onTap: _openFilterModal,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.tune, color: _kGreen, size: 20),
+                          const SizedBox(width: 8),
+                          const Text(
+                            'Filters',
+                            style: TextStyle(
+                              fontFamily: 'Inter',
+                              fontWeight: FontWeight.w500,
+                              fontSize: 14,
+                              color: _kGreen,
+                              letterSpacing: 0.25,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
 
@@ -456,6 +499,243 @@ class _FarmerGroupRow extends StatelessWidget {
             color: const Color(0xFFF5F5F5),
           ),
       ],
+    );
+  }
+}
+
+// ─── Filter Modal ────────────────────────────────────────────────────────────
+class _FilterModal extends StatefulWidget {
+  final String selectedCommunity;
+  final Function(String) onCommunitySelected;
+
+  const _FilterModal({
+    required this.selectedCommunity,
+    required this.onCommunitySelected,
+  });
+
+  @override
+  State<_FilterModal> createState() => _FilterModalState();
+}
+
+class _FilterModalState extends State<_FilterModal> {
+  late String _tempSelected;
+  bool _communitiesExpanded = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _tempSelected = widget.selectedCommunity;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Header
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: const BoxDecoration(
+              border: Border(
+                bottom: BorderSide(color: _kDivider),
+              ),
+            ),
+            child: Row(
+              children: [
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: const Icon(Icons.arrow_back, color: Colors.black, size: 24),
+                ),
+                const SizedBox(width: 16),
+                const Expanded(
+                  child: Text(
+                    'Filter list by',
+                    style: TextStyle(
+                      fontFamily: 'Inter',
+                      fontWeight: FontWeight.w500,
+                      fontSize: 16,
+                      color: Colors.black,
+                      letterSpacing: 0.15,
+                      height: 24 / 16,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Communities expandable section
+          GestureDetector(
+            onTap: () {
+              setState(() => _communitiesExpanded = !_communitiesExpanded);
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              decoration: const BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(color: _kDivider),
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Communities',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontWeight: FontWeight.w500,
+                        fontSize: 16,
+                        color: Colors.black,
+                        letterSpacing: 0.15,
+                        height: 24 / 16,
+                      ),
+                    ),
+                  ),
+                  AnimatedRotation(
+                    turns: _communitiesExpanded ? 0.25 : 0,
+                    duration: const Duration(milliseconds: 200),
+                    child: const Icon(Icons.chevron_right, color: Color(0xFFD1D5DB), size: 24),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Communities list (expanded)
+          if (_communitiesExpanded) ..._buildCommunitiesList(),
+
+          // Show results button
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _kGreen,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                onPressed: () => widget.onCommunitySelected(_tempSelected),
+                child: const Text(
+                  'Show results',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                    color: Colors.white,
+                    letterSpacing: 0.5,
+                    height: 24 / 16,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _buildCommunitiesList() {
+    return [
+      Container(
+        constraints: const BoxConstraints(maxHeight: 400),
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              // "All communities" option
+              _CommunityRadioTile(
+                label: 'All communities',
+                isSelected: _tempSelected == 'All communities',
+                onSelected: () {
+                  setState(() => _tempSelected = 'All communities');
+                },
+              ),
+              // Get unique communities from _kFarmerGroups
+              ...const <String>[
+                'Kalba',
+                'Gbaaliyiri',
+                'Nahari',
+                'Kolbayiri',
+                'Uro Sarkoromaa',
+                'Kunfusi',
+                'Uro',
+              ].map(
+                (community) => _CommunityRadioTile(
+                  label: community,
+                  isSelected: _tempSelected == community,
+                  onSelected: () {
+                    setState(() => _tempSelected = community);
+                  },
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ];
+  }
+}
+
+// ─── Community Radio Tile ──────────────────────────────────────────────────────
+class _CommunityRadioTile extends StatelessWidget {
+  final String label;
+  final bool isSelected;
+  final VoidCallback onSelected;
+
+  const _CommunityRadioTile({
+    required this.label,
+    required this.isSelected,
+    required this.onSelected,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onSelected,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Container(
+              width: 20,
+              height: 20,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isSelected ? _kGreen : const Color(0xFFBDBDBD),
+                  width: 2,
+                ),
+                color: isSelected ? _kGreen : Colors.transparent,
+              ),
+              child: isSelected
+                  ? const Center(
+                      child: Icon(
+                        Icons.check,
+                        color: Colors.white,
+                        size: 12,
+                      ),
+                    )
+                  : null,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              label,
+              style: TextStyle(
+                fontFamily: 'Inter',
+                fontWeight: FontWeight.w400,
+                fontSize: 14,
+                color: isSelected ? _kGreen : Colors.black,
+                letterSpacing: 0.25,
+                height: 20 / 14,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
