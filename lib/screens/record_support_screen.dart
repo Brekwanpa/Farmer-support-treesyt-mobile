@@ -242,29 +242,25 @@ class _FiltersButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () {},
-      borderRadius: BorderRadius.circular(8),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Filter/sliders icon — Icons.tune matches the 3-line-with-dot spec
-            const Icon(Icons.tune, color: _kGreen, size: 20),
-            const SizedBox(width: 8),
-            const Text(
-              'Filters',
-              style: TextStyle(
-                fontFamily: 'Inter',
-                fontWeight: FontWeight.w500,
-                fontSize: 14,
-                color: _kGreen,
-                height: 20 / 14,
-              ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Filter/sliders icon — Icons.tune matches the 3-line-with-dot spec
+          const Icon(Icons.tune, color: _kGreen, size: 20),
+          const SizedBox(width: 8),
+          const Text(
+            'Filters',
+            style: TextStyle(
+              fontFamily: 'Inter',
+              fontWeight: FontWeight.w500,
+              fontSize: 14,
+              color: _kGreen,
+              height: 20 / 14,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -454,7 +450,7 @@ class _GroupRow extends StatelessWidget {
   }
 }
 
-// ─── Empty state ───────────────────────────────────────��──────────────────────
+// ─── Empty state ───────────────────────────────────────����──────────────────────
 class _EmptyState extends StatelessWidget {
   const _EmptyState();
 
@@ -497,6 +493,7 @@ class _FilterModal extends StatefulWidget {
 
 class _FilterModalState extends State<_FilterModal> {
   late String _tempSelected;
+  bool _communitiesExpanded = false;
 
   @override
   void initState() {
@@ -520,7 +517,10 @@ class _FilterModalState extends State<_FilterModal> {
             ),
             child: Row(
               children: [
-                const Icon(Icons.arrow_back, color: Colors.black, size: 24),
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: const Icon(Icons.arrow_back, color: Colors.black, size: 24),
+                ),
                 const SizedBox(width: 16),
                 const Expanded(
                   child: Text(
@@ -538,35 +538,47 @@ class _FilterModalState extends State<_FilterModal> {
               ],
             ),
           ),
-          // Communities section
-          Container(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    const Expanded(
-                      child: Text(
-                        'Communities',
-                        style: TextStyle(
-                          fontFamily: 'Inter',
-                          fontWeight: FontWeight.w500,
-                          fontSize: 16,
-                          color: Colors.black,
-                          letterSpacing: 0.15,
-                          height: 24 / 16,
-                        ),
+          
+          // Communities expandable section
+          GestureDetector(
+            onTap: () {
+              setState(() => _communitiesExpanded = !_communitiesExpanded);
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              decoration: const BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(color: _kDivider),
+                ),
+              ),
+              child: Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Communities',
+                      style: TextStyle(
+                        fontFamily: 'Inter',
+                        fontWeight: FontWeight.w500,
+                        fontSize: 16,
+                        color: Colors.black,
+                        letterSpacing: 0.15,
+                        height: 24 / 16,
                       ),
                     ),
-                    const Icon(Icons.chevron_right, color: Color(0xFFD1D5DB), size: 24),
-                  ],
-                ),
-              ],
+                  ),
+                  AnimatedRotation(
+                    turns: _communitiesExpanded ? 0.25 : 0,
+                    duration: const Duration(milliseconds: 200),
+                    child: const Icon(Icons.chevron_right, color: Color(0xFFD1D5DB), size: 24),
+                  ),
+                ],
+              ),
             ),
           ),
-          // Communities list
-          ..._buildCommunitiesList(),
+          
+          // Communities list (expanded)
+          if (_communitiesExpanded) ..._buildCommunitiesList(),
+          
           // Show results button
           Padding(
             padding: const EdgeInsets.all(16),
@@ -603,8 +615,8 @@ class _FilterModalState extends State<_FilterModal> {
 
   List<Widget> _buildCommunitiesList() {
     return [
-      SizedBox(
-        height: 300,
+      Container(
+        constraints: const BoxConstraints(maxHeight: 400),
         child: SingleChildScrollView(
           child: Column(
             children: [
