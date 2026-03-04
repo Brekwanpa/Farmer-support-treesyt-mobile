@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'farmer_groups_profile_screen.dart';
 
 // ─── Spec-exact colour palette ───────────────────────────────────────────────
 const Color _kGreen       = Color(0xFF18A369);
@@ -31,11 +32,23 @@ class _ProfilingScreenState extends State<ProfilingScreen> {
   }
 
   void _onProfileTypeTap(String type) {
-    // Placeholder for profile type selection
-    // Can be extended to navigate to different profile screens
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Selected: $type')),
-    );
+    switch (type) {
+      case 'Farmer groups':
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => const FarmerGroupsProfileScreen(),
+          ),
+        );
+        break;
+      case 'Communities':
+      case 'Farmers':
+        // Placeholder for future implementation
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('$type screen coming soon')),
+        );
+        break;
+    }
   }
 
   @override
