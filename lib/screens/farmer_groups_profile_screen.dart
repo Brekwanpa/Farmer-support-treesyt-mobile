@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'group_details_screen.dart';
 
 // ─── Spec-exact colour palette ───────────────────────────────────────────────
 const Color _kGreen       = Color(0xFF18A369);
@@ -335,7 +336,15 @@ class _FarmerGroupsProfileScreenState extends State<FarmerGroupsProfileScreen> {
                     (group) => _FarmerGroupRow(
                       group: group,
                       onTap: () {
-                        // TODO: Navigate to group profile/update details
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => GroupDetailsScreen(
+                              groupName: group.name,
+                              farmerCount: 20,
+                            ),
+                          ),
+                        );
                       },
                     ),
                   ),
