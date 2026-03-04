@@ -454,7 +454,7 @@ class _GroupRow extends StatelessWidget {
   }
 }
 
-// ─── Empty state ──────────────────────────────────────────────────────────────
+// ─── Empty state ───────────────────────────────────────��──────────────────────
 class _EmptyState extends StatelessWidget {
   const _EmptyState();
 
@@ -670,11 +670,11 @@ class _CommunityRadioTile extends StatelessWidget {
                 ),
               ),
               child: isSelected
-                  ? const Center(
+                  ? Center(
                       child: Container(
                         width: 12,
                         height: 12,
-                        decoration: BoxDecoration(
+                        decoration: const BoxDecoration(
                           shape: BoxShape.circle,
                           color: _kGreen,
                         ),
