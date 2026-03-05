@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'group_details_screen.dart';
+import 'group_details_screen.dart';
 
 // ─── Spec-exact colour palette ───────────────────────────────────────────────
 const Color _kGreen       = Color(0xFF18A369);
@@ -89,7 +90,14 @@ const List<_FarmerGroup> _kFarmerGroups = [
 
 // ─── Screen ──────────────────────────────────────────────────────────────────
 class FarmerGroupsProfileScreen extends StatefulWidget {
-  const FarmerGroupsProfileScreen({super.key});
+  final String? groupNameToOpen;
+  final bool shouldOpenActions;
+
+  const FarmerGroupsProfileScreen({
+    super.key,
+    this.groupNameToOpen,
+    this.shouldOpenActions = false,
+  });
 
   @override
   State<FarmerGroupsProfileScreen> createState() =>
@@ -120,6 +128,13 @@ class _FarmerGroupsProfileScreenState extends State<FarmerGroupsProfileScreen> {
       statusBarColor: _kGreen,
       statusBarIconBrightness: Brightness.light,
     ));
+
+    // Auto-navigate to group if specified
+    if (widget.groupNameToOpen != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _navigateToGroup();
+      });
+    }
   }
 
   @override
@@ -149,6 +164,26 @@ class _FarmerGroupsProfileScreenState extends State<FarmerGroupsProfileScreen> {
 
       _filteredGroups = filtered;
     });
+  }
+
+  void _navigateToGroup() {
+    // Find the group by name
+    final group = _kFarmerGroups.firstWhere(
+      (g) => g.name == widget.groupNameToOpen,
+      orElse: () => _kFarmerGroups.first,
+    );
+
+    // Navigate to GroupDetailsScreen and optionally open actions
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => GroupDetailsScreen(
+          groupName: group.name,
+          farmerCount: 20,
+          shouldOpenActions: widget.shouldOpenActions,
+        ),
+      ),
+    );
   }
 
   void _openFilterModal() {
