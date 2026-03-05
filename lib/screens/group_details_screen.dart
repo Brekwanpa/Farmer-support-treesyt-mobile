@@ -387,7 +387,7 @@ class _ActionsBottomSheet extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (_) => UpdateGroupDetailsScreen(
-                      groupName: widget.groupName,
+                      groupName: groupName,
                     ),
                   ),
                 );
