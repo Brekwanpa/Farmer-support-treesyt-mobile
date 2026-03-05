@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'update_group_details_screen.dart';
 
 // ─── Colours ──────────────────────────────────────────────────────────────────
 const Color _kGreen = Color(0xFF18A369);
@@ -382,7 +383,14 @@ class _ActionsBottomSheet extends StatelessWidget {
               ),
               onPressed: () {
                 Navigator.pop(context);
-                // TODO: Navigate to update group details
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => UpdateGroupDetailsScreen(
+                      groupName: widget.groupName,
+                    ),
+                  ),
+                );
               },
               child: const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
