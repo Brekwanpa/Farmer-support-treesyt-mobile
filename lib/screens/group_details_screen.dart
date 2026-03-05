@@ -40,10 +40,12 @@ const List<_Farmer> _kFarmers = [
 class GroupDetailsScreen extends StatefulWidget {
   final String groupName;
   final int farmerCount;
+  final bool shouldOpenActions;
 
   const GroupDetailsScreen({
     required this.groupName,
     required this.farmerCount,
+    this.shouldOpenActions = false,
   });
 
   @override
@@ -58,6 +60,13 @@ class _GroupDetailsScreenState extends State<GroupDetailsScreen> {
   void initState() {
     super.initState();
     _searchController = TextEditingController();
+
+    // Auto-open actions bottom sheet if specified
+    if (widget.shouldOpenActions) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showActionsModal();
+      });
+    }
   }
 
   @override

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 
 import 'farmer_selection_screen.dart';
 import 'saved_group_details_screen.dart';
+import 'farmer_groups_profile_screen.dart';
 
 // ─── Colours (spec-exact) ─────────────────────────────────────────────────────
 const Color _kGreen       = Color(0xFF18A369);
@@ -217,11 +218,9 @@ class _RecordSupportScreenState extends State<RecordSupportScreen> {
                       Navigator.push(
                         ctx,
                         MaterialPageRoute(
-                          builder: (_) => SavedGroupDetailsScreen(
-                            groupName: group.name,
-                            selectedFarmers: [],
-                            totalFarmers: 0,
-                            year: widget.year,
+                          builder: (_) => FarmerGroupsProfileScreen(
+                            groupNameToOpen: group.name,
+                            shouldOpenActions: true,
                           ),
                         ),
                       );
