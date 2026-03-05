@@ -16,7 +16,7 @@ const Color _kTextGray     = Color(0xFF696969);
 const Color _kTextLtGray   = Color(0xFFA3A3A3);
 
 // ─── Data ─────────────────────────────────────────────────────────────────────
-const List<int> _kAmounts = [50, 100, 150, 200, 250, 300, 400, 500];
+const List<int> _kAmounts = [350, 400, 450, 500, 550, 600, 650, 700, 750, 800];
 
 // ─── Screen ───────────────────────────────────────────────────────────────────
 class AssignCashSupportScreen extends StatefulWidget {
@@ -39,11 +39,10 @@ class AssignCashSupportScreen extends StatefulWidget {
 }
 
 class _AssignCashSupportScreenState extends State<AssignCashSupportScreen> {
-  int  _amountPerFarmer = 100;
-  bool _doubleAmount    = false;
+  int    _amountPerFarmer = 350;
+  String _expectedBags    = '';
 
-  int get _effectiveAmount =>
-      _doubleAmount ? _amountPerFarmer * 2 : _amountPerFarmer;
+  TextEditingController get _bagsController => TextEditingController(text: _expectedBags);
 
   void _proceed() {
     Navigator.push(
@@ -55,8 +54,7 @@ class _AssignCashSupportScreenState extends State<AssignCashSupportScreen> {
           totalFarmers: widget.totalFarmers,
           year: widget.year,
           amountPerFarmer: _amountPerFarmer,
-          doubleAmount: _doubleAmount,
-          effectiveAmountPerFarmer: _effectiveAmount,
+          expectedBags: _expectedBags,
         ),
       ),
     );
@@ -114,12 +112,11 @@ class _AssignCashSupportScreenState extends State<AssignCashSupportScreen> {
                               padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
                               child: _CashSupportCard(
                                 amount: _amountPerFarmer,
-                                doubleAmount: _doubleAmount,
-                                effectiveAmount: _effectiveAmount,
+                                expectedBags: _expectedBags,
                                 onAmountChanged: (v) =>
                                     setState(() => _amountPerFarmer = v),
-                                onDoubleChanged: (v) =>
-                                    setState(() => _doubleAmount = v),
+                                onBagsChanged: (v) =>
+                                    setState(() => _expectedBags = v),
                               ),
                             ),
                           ],
@@ -263,17 +260,15 @@ class _RequestDetailsHeader extends StatelessWidget {
 // ─── §7 Cash support card ─────────────────────────────────────────────────────
 class _CashSupportCard extends StatelessWidget {
   final int amount;
-  final bool doubleAmount;
-  final int effectiveAmount;
+  final String expectedBags;
   final ValueChanged<int> onAmountChanged;
-  final ValueChanged<bool> onDoubleChanged;
+  final ValueChanged<String> onBagsChanged;
 
   const _CashSupportCard({
     required this.amount,
-    required this.doubleAmount,
-    required this.effectiveAmount,
+    required this.expectedBags,
     required this.onAmountChanged,
-    required this.onDoubleChanged,
+    required this.onBagsChanged,
   });
 
   @override
@@ -317,12 +312,10 @@ class _CashSupportCard extends StatelessWidget {
                 const Divider(height: 1, thickness: 1, color: _kDivider),
                 const SizedBox(height: 16),
 
-                // Double amount toggle + value reveal
-                _DoubleAmountRow(
-                  value: doubleAmount,
-                  amount: amount,
-                  effectiveAmount: effectiveAmount,
-                  onChanged: onDoubleChanged,
+                // Expected bags per farmer during recovery
+                _ExpectedBagsField(
+                  value: expectedBags,
+                  onChanged: onBagsChanged,
                 ),
               ],
             ),
@@ -366,7 +359,7 @@ class _AmountField extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.only(left: 0),
                     child: Text(
-                      '$amt',
+                      'GHS $amt',
                       style: const TextStyle(
                         fontFamily: 'Inter',
                         fontWeight: FontWeight.w400,
@@ -379,6 +372,22 @@ class _AmountField extends StatelessWidget {
                 ),
               )
               .toList(),
+          selectedItemBuilder: (BuildContext context) {
+            return _kAmounts
+                .map(
+                  (amt) => Text(
+                    'GHS $amt',
+                    style: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontWeight: FontWeight.w400,
+                      fontSize: 14,
+                      color: _kTextDark,
+                      letterSpacing: 0.25,
+                    ),
+                  ),
+                )
+                .toList();
+          },
           onChanged: (v) {
             if (v != null) onChanged(v);
           },
@@ -444,108 +453,128 @@ class _StyledDropdown<T> extends StatelessWidget {
   }
 }
 
-// ─── Double-amount toggle row ─────────────────────────────────────────────────
-// When the toggle is ON, shows a mint info banner with the doubled amount.
-class _DoubleAmountRow extends StatelessWidget {
-  final bool value;
-  final int amount;
-  final int effectiveAmount;
-  final ValueChanged<bool> onChanged;
+// ─── Expected bags per farmer field ──────────────────────────────────────────
+class _ExpectedBagsField extends StatelessWidget {
+  final String value;
+  final ValueChanged<String> onChanged;
 
-  const _DoubleAmountRow({
-    required this.value,
-    required this.amount,
-    required this.effectiveAmount,
-    required this.onChanged,
-  });
+  const _ExpectedBagsField({required this.value, required this.onChanged});
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Double amount',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontWeight: FontWeight.w500,
-                      fontSize: 14,
-                      color: _kTextDark,
-                      letterSpacing: 0.25,
-                      height: 1.5,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Farmer returns 2 bags at recovery',
-                    style: TextStyle(
-                      fontFamily: 'Inter',
-                      fontWeight: FontWeight.w400,
-                      fontSize: 14,
-                      color: _kTextGray,
-                      letterSpacing: 0.25,
-                      height: 1.5,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            _CustomToggle(value: value, onChanged: onChanged),
+        const Text(
+          'Expected bag per farmer during recovery',
+          style: TextStyle(
+            fontFamily: 'Inter',
+            fontWeight: FontWeight.w500,
+            fontSize: 14,
+            color: _kTextDark,
+            letterSpacing: 0.25,
+            height: 1.5,
+          ),
+        ),
+        const SizedBox(height: 6),
+        TextField(
+          controller: TextEditingController(text: value),
+          onChanged: onChanged,
+          keyboardType: TextInputType.number,
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
           ],
+          decoration: InputDecoration(
+            hintText: '0',
+            hintStyle: const TextStyle(
+              fontFamily: 'Inter',
+              fontWeight: FontWeight.w400,
+              fontSize: 14,
+              color: Color(0xFFBDBDBD),
+              letterSpacing: 0.25,
+            ),
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(6),
+              borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 1),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(6),
+              borderSide: const BorderSide(color: Color(0xFFE0E0E0), width: 1),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(6),
+              borderSide: const BorderSide(color: _kGreen, width: 1),
+            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          ),
+          style: const TextStyle(
+            fontFamily: 'Inter',
+            fontWeight: FontWeight.w400,
+            fontSize: 14,
+            color: _kTextDark,
+            letterSpacing: 0.25,
+          ),
         ),
 
-        // Double-amount value banner — only shown when toggle is ON.
-        if (value) ...[
+        // Alert banner — shown when bags value is entered
+        if (value.isNotEmpty && value != '0') ...[
           const SizedBox(height: 12),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
             decoration: BoxDecoration(
-              color: _kGreenLight,
+              color: const Color(0xFFFFF8E1),
               borderRadius: BorderRadius.circular(6),
-              border: Border.all(color: const Color(0xFFB7E5D4)),
+              border: Border.all(color: const Color(0xFFFFE0B2), width: 1),
             ),
             child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(
-                  Icons.swap_vert_rounded,
-                  size: 16,
-                  color: _kGreenDark,
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: RichText(
-                    text: TextSpan(
-                      style: const TextStyle(
-                        fontFamily: 'Inter',
-                        fontWeight: FontWeight.w400,
-                        fontSize: 14,
-                        color: _kGreenDark,
-                        letterSpacing: 0.2,
-                        height: 1.5,
-                      ),
-                      children: [
-                        const TextSpan(text: 'Double amount: '),
-                        TextSpan(
-                          text: 'GHS $effectiveAmount per farmer',
-                          style: const TextStyle(fontWeight: FontWeight.w600),
-                        ),
-                        TextSpan(
-                          text: '  ($amount × 2 bags at recovery)',
-                          style: const TextStyle(
-                            color: _kTextGray,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
+                Container(
+                  width: 24,
+                  height: 24,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFF9800),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Center(
+                    child: Icon(
+                      Icons.info,
+                      color: Colors.white,
+                      size: 14,
                     ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Number of bags expected during recoveries',
+                        style: TextStyle(
+                          fontFamily: 'Inter',
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                          color: Color(0xFFFF9800),
+                          letterSpacing: 0.25,
+                          height: 1.4,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Each farmer will submit $value ${value == '1' ? 'bag' : 'bags'} when it is time for recovery',
+                        style: const TextStyle(
+                          fontFamily: 'Inter',
+                          fontWeight: FontWeight.w400,
+                          fontSize: 14,
+                          color: Color(0xFFFF9800),
+                          letterSpacing: 0.25,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],

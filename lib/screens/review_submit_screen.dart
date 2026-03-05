@@ -18,9 +18,8 @@ class ReviewSubmitScreen extends StatelessWidget {
   final int selectedFarmers;
   final int totalFarmers;
   final int year;
-  final int amountPerFarmer;          // base amount chosen
-  final bool doubleAmount;            // farmer returns 2 bags at recovery
-  final int effectiveAmountPerFarmer; // actual disbursement (2× if double)
+  final int amountPerFarmer;
+  final String expectedBags;
 
   const ReviewSubmitScreen({
     super.key,
@@ -28,12 +27,11 @@ class ReviewSubmitScreen extends StatelessWidget {
     this.selectedFarmers = 8,
     this.totalFarmers = 11,
     this.year = 2026,
-    this.amountPerFarmer = 700,
-    this.doubleAmount = false,
-    this.effectiveAmountPerFarmer = 700,
+    this.amountPerFarmer = 350,
+    this.expectedBags = '',
   });
 
-  int get _total => effectiveAmountPerFarmer * selectedFarmers;
+  int get _total => amountPerFarmer * selectedFarmers;
 
   void _submit(BuildContext context) {
     Navigator.push(
@@ -110,8 +108,7 @@ class ReviewSubmitScreen extends StatelessWidget {
                             _SupportDetailsCard(
                               year: year,
                               amountPerFarmer: amountPerFarmer,
-                              doubleAmount: doubleAmount,
-                              effectiveAmountPerFarmer: effectiveAmountPerFarmer,
+                              expectedBags: expectedBags,
                               selectedFarmers: selectedFarmers,
                               total: _total,
                             ),
@@ -205,16 +202,14 @@ class _GroupSummaryCard extends StatelessWidget {
 class _SupportDetailsCard extends StatelessWidget {
   final int year;
   final int amountPerFarmer;
-  final bool doubleAmount;
-  final int effectiveAmountPerFarmer;
+  final String expectedBags;
   final int selectedFarmers;
   final int total;
 
   const _SupportDetailsCard({
     required this.year,
     required this.amountPerFarmer,
-    required this.doubleAmount,
-    required this.effectiveAmountPerFarmer,
+    required this.expectedBags,
     required this.selectedFarmers,
     required this.total,
   });
@@ -292,7 +287,7 @@ class _SupportDetailsCard extends StatelessWidget {
                 Row(
                   children: [
                     Text(
-                      '$effectiveAmountPerFarmer GHC per farmer',
+                      'GHC $amountPerFarmer per farmer',
                       style: const TextStyle(
                         fontFamily: 'Inter',
                         fontWeight: FontWeight.w400,
@@ -305,19 +300,19 @@ class _SupportDetailsCard extends StatelessWidget {
                   ],
                 ),
 
-                // Double-bags note (only shown when doubleAmount is true)
-                if (doubleAmount) ...[
+                // Expected bags note (only shown when expectedBags is not empty)
+                if (expectedBags.isNotEmpty) ...[
                   const SizedBox(height: 8),
                   Row(
                     children: [
                       const Icon(
-                        Icons.swap_vert_rounded,
+                        Icons.shopping_bag_outlined,
                         size: 16,
                         color: Color(0xFF198246),
                       ),
                       const SizedBox(width: 6),
                       Text(
-                        'Double bags — returns 2 bags at recovery',
+                        '$expectedBags bags expected at recovery',
                         style: const TextStyle(
                           fontFamily: 'Inter',
                           fontWeight: FontWeight.w400,
@@ -379,7 +374,7 @@ class _SupportDetailsCard extends StatelessWidget {
 
                 // Calculation note — e.g. "GHC 700 × 8 farmers"
                 Text(
-                  'GHC $effectiveAmountPerFarmer × $selectedFarmers farmers',
+                  'GHC $amountPerFarmer × $selectedFarmers farmers',
                   style: const TextStyle(
                     fontFamily: 'Inter',
                     fontWeight: FontWeight.w400,
@@ -467,7 +462,7 @@ class _BottomButton extends StatelessWidget {
   }
 }
 
-// ─── Status bar — 52 px ───────────────────────────────────────────────────────
+// ─── Status bar — 52 px ────────────────────────────────���──────────────────────
 class _StatusBar extends StatelessWidget {
   const _StatusBar();
 
